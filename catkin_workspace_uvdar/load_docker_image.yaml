@@ -8,12 +8,12 @@
 
     - name: Copy Docker image to remote machine
       ansible.builtin.copy:
-        src: "~/docker/uvdar_workspacel:1.0.1.tar.gz"
-        dest: "/tmp/uvdar_workspacel:1.0.1.tar.gz"
+        src: "~/docker/uvdar_workspace:1.0.1.tar.gz"
+        dest: "/tmp/uvdar_workspace:1.0.1.tar.gz"
         mode: '0644'
 
     - name: Load Docker image on remote machine
-      ansible.builtin.shell: docker load -i /tmp/rbl_controller_3d-test_image:1.0.0.tar.gz
+      ansible.builtin.shell: docker load -i /tmp/uvdar_workspace:1.0.1.tar.gz
       register: docker_load_output
 
     - name: Show Docker load output

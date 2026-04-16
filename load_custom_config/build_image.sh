@@ -18,7 +18,7 @@ cd ${MY_PATH}
 LOCAL_TAG=uav_custom_files:uvdar
 
 # ARCH=amd64
-ARCH=arm64 # robofly
+ARCH=amd64
 
 ## --------------------------------------------------------------
 ## |                            build                           |

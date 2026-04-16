@@ -19,7 +19,7 @@ cd ${MY_PATH}
 LOCAL_TAG=shared_data:worlds
 
 # ARCH=amd64
-ARCH=arm64 # robofly
+ARCH=amd64
 
 ## --------------------------------------------------------------
 ## |                            build                           |

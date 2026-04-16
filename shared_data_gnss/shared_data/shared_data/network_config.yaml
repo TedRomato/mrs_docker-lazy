@@ -11,15 +11,6 @@
 network:
 
   robot_names: [
-    uav60,
-    uav61,
-    uav62,
-    uav63,
-    uav64,
-    uav65,
-    uav66,
-    uav67,
-    uav68,
-    uav69,
-    uav85,
+    uav9,
+    uav14,
   ]

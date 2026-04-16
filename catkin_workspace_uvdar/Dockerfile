@@ -12,11 +12,14 @@ ARG WORKSPACE_PATH
 
 COPY ./cache/${WORKSPACE_PATH}/ /${WORKSPACE_PATH}/
 
-# create catkin workspace
+# create catkin workspace   
 RUN [ ! -e /${WORKSPACE_PATH}/.catkin_tools ] && cd /${WORKSPACE_PATH} && catkin init && catkin config --profile reldeb --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && catkin profile set reldeb && catkin config --extend /opt/ros/noetic || echo "[Docker]: catkin workspace already exists"
 
 # copy the sources from the local subfolder
 COPY src/ /${WORKSPACE_PATH}/src/
+# LINE ADDED BY ME:
+RUN cd /${WORKSPACE_PATH}/src/bluefox2/install && ./install.sh
+
 RUN cd /${WORKSPACE_PATH} && catkin build -s
 
 #############################################################################

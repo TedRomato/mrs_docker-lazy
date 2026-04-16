@@ -1,0 +1,220 @@
+# =============================================================================
+# OBSERVER UAV — compose stack
+# =============================================================================
+# Services: MRS core + cameras + UVDAR detection + rosbag + experiment terminal
+#
+# The observer flies to a fixed camera pose (C, C_heading) and runs the UVDAR
+# pipeline to detect the flier's UV LEDs.
+# =============================================================================
+
+volumes:
+  shared_data:
+  uav_custom_files:
+  catkin_workspace:
+  bag_files:
+  logs:
+
+services:
+
+  # ---------- data copy containers (run once at startup) ----------
+
+  copy_shared_data:
+    image: shared_data:worlds
+    volumes:
+      - shared_data:/tmp/docker/shared_data:consistent
+    tty: true
+    command: sh -c "rm -rvf /tmp/docker/shared_data/*; mkdir -pv /tmp/docker/shared_data; cp -rv /etc/docker/shared_data/* /tmp/docker/shared_data/"
+
+  copy_uav_custom_files:
+    image: uav_custom_files:uvdar
+    volumes:
+      - uav_custom_files:/tmp/docker/uav_custom_files:consistent
+    tty: true
+    command: sh -c "rm -rvf /tmp/docker/uav_custom_files/*; mkdir -pv /tmp/docker/uav_custom_files; cp -rv /etc/docker/uav_custom_files/${UAV_TYPE}/${UAV_ID}/* /tmp/docker/uav_custom_files/"
+
+
+  copy_catkin_workspace:
+    image: uvdar_workspace:1.0.1
+    volumes:
+      - catkin_workspace:/tmp/docker/catkin_workspace_1:consistent
+    tty: true
+    command: sh -c "rm -rvf /tmp/docker/catkin_workspace_1/*; mkdir -pv /tmp/docker/catkin_workspace_1; cp -rv /etc/docker/catkin_workspace_1/* /tmp/docker/catkin_workspace_1/"
+
+  # ---------- ROS core ----------
+
+  roscore:
+    image: timlakemann/mrs_uav_system_custom:0.2
+    network_mode: host
+    depends_on:
+      - copy_shared_data
+      - copy_catkin_workspace
+    env_file:
+      - ./stack.env
+    tty: true
+    command: roscore
+
+  rostime:
+    image: timlakemann/mrs_uav_system_custom:0.2
+    network_mode: host
+    depends_on:
+      - roscore
+    env_file:
+      - ./stack.env
+    tty: true
+    command: bash -c "waitForRos && rosparam set use_sim_time false"
+
+  # ---------- MRS UAV system ----------
+
+  hw_api:
+    image: timlakemann/mrs_uav_system_custom:0.2
+    depends_on:
+      - rostime
+    network_mode: host
+    volumes:
+      - shared_data:/etc/docker/shared_data:consistent
+      - /dev/:/dev/
+    privileged: true
+    env_file:
+      - ./stack.env
+    tty: true
+    command: bash -c "waitForTime && roslaunch mrs_uav_px4_api api.launch"
+
+  uav_core:
+    image: timlakemann/mrs_uav_system_custom:0.2
+    depends_on:
+      - rostime
+    network_mode: host
+    volumes:
+      - shared_data:/etc/docker/shared_data:consistent
+    env_file:
+      - ./stack.env
+    tty: true
+    command: >-
+      bash -c "waitForHw && roslaunch mrs_uav_core core.launch
+      platform_config:=`rospack find mrs_robofly_core`/config/platform_config.yaml
+      custom_config:=/etc/docker/shared_data/custom_config.yaml
+      world_config:=/etc/docker/shared_data/world_local.yaml
+      network_config:=/etc/docker/shared_data/network_config.yaml"
+
+  automatic_start:
+    image: timlakemann/mrs_uav_system_custom:0.2
+    depends_on:
+      - rostime
+    network_mode: host
+    volumes:  
+      - shared_data:/etc/docker/shared_data:consistent
+    env_file:
+      - ./stack.env
+    tty: true
+    command: bash -c "waitForHw && roslaunch mrs_uav_autostart automatic_start.launch custom_config:=/etc/docker/shared_data/automatic_start.yaml"
+
+
+
+  # ---------- UVDAR detection pipeline ----------
+
+
+  uvdar:
+    image: timlakemann/mrs_uav_system_custom:0.2
+    depends_on:
+      - copy_catkin_workspace
+      - copy_uav_custom_files
+      - rostime
+    network_mode: host
+    volumes:
+      - catkin_workspace:/etc/docker/catkin_workspace_1:consistent
+      - shared_data:/etc/docker/shared_data:consistent
+      - uav_custom_files:/etc/docker/uav_custom_files:consistent
+      - /dev/:/dev/
+    privileged: true
+    env_file:
+      - ./stack.env
+    tty: true
+    command: >-
+      bash -c "source /etc/docker/catkin_workspace_1/devel/setup.bash &&
+      waitForTime && roslaunch /etc/docker/uav_custom_files/launch_files/rw_one_sided.launch"
+      
+
+  nimbro:
+    image: timlakemann/mrs_uav_system_custom:0.2
+    depends_on:
+      - copy_catkin_workspace
+
+    volumes: 
+      - shared_data:/etc/docker/shared_data:consistent
+    network_mode: host
+
+    privileged: true
+    env_file:
+      - ./stack.env
+    tty: true
+    command: >-
+      bash -c "waitForTime && rosrun mrs_uav_deployment run_nimbro.py /etc/docker/shared_data/network_config.yaml /etc/docker/shared_data/communication_config.yaml"
+
+  # ---------- rosbag recording ----------
+
+  estim_diag:
+    image: timlakemann/mrs_uav_system_custom:0.2
+    depends_on:
+      - copy_catkin_workspace
+    network_mode: host
+
+    privileged: true
+    env_file:
+      - ./stack.env
+    tty: true
+    command: >-
+      bash -c "waitForHw && rostopic echo ${UAV_NAME}/estimation_manager/diagnostics"
+
+  rosbag:
+    image: timlakemann/mrs_uav_system_custom:0.2
+    depends_on:
+      - rostime
+    network_mode: host
+    volumes:
+      - bag_files:/etc/docker/bag_files:consistent
+      - shared_data:/etc/docker/shared_data:consistent
+    env_file:
+      - ./stack.env
+    tty: true
+    command: bash -c "waitForTime && /etc/docker/shared_data/record.sh"
+
+  # ---------- utilities ----------
+
+  rosbridge:
+    image: timlakemann/mrs_uav_system_custom:0.2
+    network_mode: host
+    env_file:
+      - ./stack.env
+    tty: true
+    command: bash -c "waitForRos && roslaunch rosbridge_server rosbridge_websocket.launch"
+
+  dogtail:
+    image: klaxalk/dogtail:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - logs:/etc/logs:consistent
+
+  # ---------- interactive terminal (for running observer_node.py) ----------
+  # Usage:  docker exec -it <container_name> bash
+  #         source /etc/docker/catkin_workspace_1/devel/setup.bash
+  #         cd /etc/docker/shared_data && python3 observer_node.py
+
+  terminal:
+    image: timlakemann/mrs_uav_system_custom:0.2
+    network_mode: host
+    depends_on:
+      - rostime
+      - copy_catkin_workspace
+    env_file:
+      - ./stack.env
+    entrypoint: ["/bin/bash", "-c"]
+    volumes:
+      - bag_files:/etc/docker/bag_files:consistent
+      - shared_data:/etc/docker/shared_data:consistent
+      - catkin_workspace:/etc/docker/catkin_workspace_1:consistent
+      - /dev/:/dev/
+    command:
+      - bash --rcfile /opt/ros/noetic/setup.bash
+    privileged: true
+    stdin_open: true
+    tty: true

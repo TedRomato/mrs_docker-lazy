@@ -11,7 +11,7 @@ export OUTPUT_IMAGE=uvdar_workspace:1.0.1 #create your own image
 export EXPORT_PATH=~/docker
 
 # CPU architecture for the output image
-export ARCH=arm64 #change it to arm64
+export ARCH=amd64
 
 # path to the catkin workspace in the docker image
 export WORKSPACE_PATH=etc/docker/catkin_workspace_1

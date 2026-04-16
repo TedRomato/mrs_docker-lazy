@@ -1,4 +1,4 @@
-name: ros_commands
+name: fov_experiment
 root: ./
 socket_name: mrs
 attach: false
@@ -10,6 +10,7 @@ windows:
       layout: tiled
       synchronize: after
       panes:
-        - cd ~/git/mrs_docker-lazy/stacks/stack63 && export DOCKER_HOST=tcp://192.168.69.163:2375
-        - cd ~/git/mrs_docker-lazy/stacks/stack64 && export DOCKER_HOST=tcp://192.168.69.164:2375
-        # - cd ~/git/mrs_docker-lazy/uvdar_stack/stack66 && export DOCKER_HOST=tcp://192.168.69.166:2375
+        # Observer UAV — change IP on-site
+        - cd ~/git/mrs_docker-lazy/stacks/stack_observer && export DOCKER_HOST=tcp://192.168.69.163:2375
+        # Flier UAV — change IP on-site
+        - cd ~/git/mrs_docker-lazy/stacks/stack_flier && export DOCKER_HOST=tcp://192.168.69.164:2375

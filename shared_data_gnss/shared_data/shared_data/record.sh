@@ -16,57 +16,15 @@ exclude=(
 # ROS communication hiccups, which can lead to eland, failsafe
 # or just a CRASH.
 
-'(.*)camera_front/image_raw'
-'(.*)camera_front/camera_info'
-'(.*)camera_front/image_raw/compressed(.*)'
-'(.*)camera_front/image_raw/theora(.*)'
-'(.*)camera_front/image_raw/compressedDepth(.*)'
+# Every topic containing "compressed"
+# '(.*)compressed(.*)'
+# Every topic containing "image_raw"
+# '(.*)image_raw(.*)'
+# Every topic containing "theora"
+# '(.*)theora(.*)'
+# Every topic containing "h264"
+# '(.*)h264(.*)'
 
-'(.*)camera_down/image_raw'
-'(.*)camera_down/camera_info'
-'(.*)camera_down/image_raw/compressed(.*)'
-'(.*)camera_down/image_raw/theora(.*)'
-'(.*)camera_down/image_raw/compressedDepth(.*)'
-
-'(.*)camera_front_throttled/image_raw'
-'(.*)camera_front_throttled/camera_info'
-# '(.*)camera_front_throttled/image_raw/compressed(.*)'
-'(.*)camera_front_throttled/image_raw/theora(.*)'
-'(.*)camera_front_throttled/image_raw/compressedDepth(.*)'
-
-'(.*)camera_down_throttled/image_raw'
-'(.*)camera_down_throttled/camera_info'
-# '(.*)camera_down_throttled/image_raw/compressed(.*)'
-'(.*)camera_down_throttled/image_raw/theora(.*)'
-'(.*)camera_down_throttled/image_raw/compressedDepth(.*)'
-
-'(.*)yolo(.*)image_raw'
-# '(.*)yolo(.*)compressed(.*)'
-'(.*)yolo(.*)theora(.*)'
-'(.*)yolo(.*)compressedDepth(.*)'
-
-'(.*)apriltag(.*)'
-
-'(.*)ov_msckf(.*)'
-
-'(.*)mavros(.*)'
-
-'(.*)mavlink(.*)'
-
-'(.*)estimation_manager(.*)proc'
-'(.*)estimation_manager(.*)raw'
-'(.*)estimation_manager(.*)input'
-'(.*)estimation_manager(.*)odom'
-'(.*)estimation_manager(.*)innovation'
-
-'(.*)vins_republisher(.*)'
-
-'(.*)parameter_descriptions'
-'(.*)parameter_updates'
-
-'(.*)mpc_tracker/string'
-
-'(.*)bond'
 )
 
 # file's header
@@ -105,4 +63,3 @@ echo "</launch>" >> "$filename"
 
 cat $filename
 roslaunch $filename
-
